@@ -18,17 +18,26 @@ const client = new Client({
 		Partials.Channel
 	]
 })
-const systemInstructions = `Tu es un agent IA autonome sur un serveur Discord.
-Tu as accès à UN SEUL outil pour chercher des informations récentes sur internet : 'recherche_web'.
+const systemInstructions = `Tu es un agent IA autonome intégré sur un serveur Discord.
 
-RÈGLES CRITIQUES :
-1. Si tu connais la réponse avec certitude ou que c'est une discussion générale, réponds normalement en français.
-2. Si tu as besoin de chercher sur internet (météo, actualités, faits récents, etc.), tu dois UNIQUEMENT répondre avec l'objet JSON ci-dessous.
-3. N'ajoute AUCUN texte avant ou après le JSON. N'écris PAS de formules comme "Je vais chercher pour toi".
-4. N'enrobe PAS le JSON dans des balises de code Markdown (ne mets pas de \`\`\`json ... \`\`\`). Écris le texte brut du JSON.
+RÈGLE CRITIQUE : Tu dois IMPÉRATIVEMENT répondre en utilisant UNIQUEMENT le format JSON suivant, sans aucun autre texte avant ou après, et sans balises de code markdown (\`\`\`).
 
-FORMAT DE RECHERCHE :
-{"action": "recherche_web", "argument": "ta recherche ici"}`
+Voici les deux structures de JSON possibles que tu as le droit de générer :
+
+1. Si tu as besoin de chercher une information récente sur internet :
+{
+  "type": "tool_call",
+  "tool": "recherche_web",
+  "argument": "les mots-clés précis de ta recherche"
+}
+
+2. Si tu as la réponse ou que tu poursuis la discussion (Réponse finale) :
+{
+  "type": "final_response",
+  "text": "Ton message de réponse complet en français ici."
+}
+
+Sois concis et utilise l'outil 'recherche_web' dès que la demande de l'utilisateur requiert des données en temps réel, de la météo, des actualités ou des faits récents.`;
 
 // When the client is ready, run this code (only once).
 // The distinction between `client: Client<boolean>` and `readyClient: Client<true>` is important for TypeScript developers.
@@ -135,6 +144,82 @@ async function executerRechercheWeb(argument) {
 }
 
 
+/**
+ * Gère la discussion avec l'IA et résout les appels d'outils (boucle de réflexion)
+ * @param {Array} historiqueMessages - L'historique des messages pour le LLM
+ * @param {number} tentative - Le compteur actuel de boucles
+ * @returns {Promise<string>} - La réponse finale textuelle de l'IA
+ */
+async function genererReponseIA(historiqueMessages, tentative = 0) {
+    const MAX_TENTATIVES = 3;
+    const modeleSelectionne = "poolside/laguna-m.1:free";
+
+    if (tentative >= MAX_TENTATIVES) {
+        console.warn(`[IA] Limite de ${MAX_TENTATIVES} tentatives atteinte.`);
+        return "Désolé, je n'ai pas réussi à finaliser ma recherche après plusieurs essais.";
+    }
+
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${OpenRouteur}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            model: modeleSelectionne,
+            messages: historiqueMessages,
+            temperature: 0.2
+        })
+    });
+
+    if (!response.ok) throw new Error(`Erreur OpenRouter: ${response.status}`);
+
+    const data = await response.json();
+    console.log("RETOUR COMPLET DE L'IA :", JSON.stringify(data, null, 2));
+    if (!data.choices || data.choices.length === 0) throw new Error("Aucune réponse reçue de l'IA.");
+
+    const contenuBrut = data.choices[0].message.content.trim();
+
+    try {
+        // On parse TOUJOURS la réponse puisque l'IA doit répondre en JSON
+        const objetIA = JSON.parse(contenuBrut);
+
+        // CAS 1 : L'IA veut utiliser l'outil de recherche
+        if (objetIA.type === "tool_call" && objetIA.tool === "recherche_web") {
+            console.log(`[IA] Recherche web demandée (Étape ${tentative + 1}) : ${objetIA.argument}`);
+
+            const resultatInternet = await executerRechercheWeb(objetIA.argument);
+
+            // On garde le JSON de l'IA dans l'historique
+            historiqueMessages.push({ role: "assistant", content: contenuBrut });
+            
+            // On lui injecte le résultat
+            historiqueMessages.push({ 
+                role: "user", 
+                content: `[RÉSULTAT DE L'OUTIL 'recherche_web'] : ${resultatInternet}\n\nAnalyse ce résultat pour donner ta réponse finale ou affiner ta recherche.` 
+            });
+
+            // On relance la fonction (récursion)
+            return await genererReponseIA(historiqueMessages, tentative + 1);
+        }
+
+        // CAS 2 : C'est la réponse finale pour l'utilisateur
+        if (objetIA.type === "final_response") {
+            return objetIA.text;
+        }
+
+        // Si le JSON est valide mais que le type est inconnu
+        return "Une erreur interne est survenue dans la structure de ma pensée.";
+
+    } catch (jsonError) {
+        console.error("[IA] Le modèle n'a pas renvoyé un JSON valide :", contenuBrut);
+        
+        // Mode de secours (fallback) : Si le modèle a quand même écrit du texte normal au lieu du JSON
+        return contenuBrut;
+    }
+}
+
+
 
 client.on(Events.MessageCreate, async (message) => {
 	if (message.author.bot) return;
@@ -149,69 +234,18 @@ client.on(Events.MessageCreate, async (message) => {
 		await message.channel.sendTyping();
 
 		try {
-			let response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-				method: "POST",
-				headers: {
-					"Authorization": `Bearer ${OpenRouteur}`,
-					"Content-Type": "application/json"
-				},
-				body: JSON.stringify({
-					// On indique l'identifiant exact de ton modèle gratuit Nvidia
-					model: "openai/gpt-oss-120b:free",
-					messages: historiqueMessages,
-					temperature: 0.2
-				})
-			});
-			const data = await response.json();
-			// Extraction du texte de la réponse
-			let reponseIA = data.choices[0].message.content.trim();
-			console.log(reponseIA.includes("recherche_web"));
-			if (reponseIA.includes("recherche_web")) {
-				try {
-					const askTools = JSON.parse(reponseIA);
-					console.log(reponseIA);
-					if (askTools.action === "recherche_web") {
-						console.log("ca passe 2");
-						const resultatInternet = await executerRechercheWeb(askTools.argument);
-						console.log(resultatInternet);
-
-						historiqueMessages.push({ role: "assistant", content: reponseIA });
-						historiqueMessages.push({ role: "user", content: `[RÉSULTAT DE L'OUTIL 'recherche_web'] : ${resultatInternet}\n\nUtilise cette information pour formuler ta réponse finale à l'utilisateur.` })
-					}
-					await message.channel.sendTyping();
-
-					let secondResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-						method: "POST",
-						headers: {
-							"Authorization": `Bearer ${OpenRouteur}`,
-							"Content-Type": "application/json"
-						},
-						body: JSON.stringify({
-							// On indique l'identifiant exact de ton modèle gratuit Nvidia
-							model: "poolside/laguna-m.1:free",
-							messages: historiqueMessages,
-							temperature: 0.2
-						})
-					});
-					let secondData = await secondResponse.json();
-					reponseIA = secondData.choices[0].message.content;
-
-
-				} catch (jsonError) {
-					console.error("L'IA a tenté de faire du JSON mais s'est trompée :", reponseIA);
-				}
-			}
+			const reponseFinale = await genererReponseIA(historiqueMessages);
 
 			// Sécurité pour la limite des 2000 caractères de Discord
-			if (reponseIA.length > 2000) {
-				await message.reply(reponseIA.slice(0, 1999));
-			} else {
-				await message.reply(reponseIA);
-			}
+            if (reponseFinale.length > 2000) {
+                await message.reply(reponseFinale.slice(0, 1999));
+            } else {
+                await message.reply(reponseFinale);
+            }
 
 		} catch (error) {
 			console.error("Erreur OpenRouter :", error);
-			await message.reply("Une erreur est survenue en contactant le modèle Nvidia.");
+			await message.reply("Une erreur est survenue en contactant le modèle.");
 		}
 	}
 
