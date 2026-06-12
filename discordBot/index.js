@@ -99,7 +99,7 @@ async function WorldCup() {
         if (match.length === 0) {
             return "Pas de match aujourd'hui";
         }
-        let messageMatchs = `🗓️ **PROGRAMME DU JOUR (${jour}) :**\n\n`;
+        let messageMatchs = `🗓️ **PROGRAMME DU JOUR (${jour}) : <@&${'1514676368296902778'}>**\n\n`;
         match.forEach(element => {
             const equipeDomicile = element.homeTeam.name;
             const equipeExterieur = element.awayTeam.name;
@@ -374,7 +374,7 @@ client.on(Events.MessageCreate, async (message) => {
     if (message.author.bot) return;
 
     // --- TA COMMANDE IA ---
-    if (message.content.startsWith("!a ")) {
+    if (message.content.startsWith("!ai ")) {
         const promptUtilisateur = message.content.slice(3);
         let historiqueMessages = [
             { role: "system", content: systemInstructions },
