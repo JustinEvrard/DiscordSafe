@@ -58,18 +58,18 @@ Sois concis et utilise l'outil 'recherche_web' dès que la demande de l'utilisat
 // It makes some properties non-nullable.
 client.once(Events.ClientReady, async (readyClient) => {
     console.log(`Ready! Logged in as ${readyClient.user.tag}`);
-    cron.schedule('0 8 * * *', async () => {
-        try {
-            const channel = await client.channels.fetch(idSalon);
-            await channel.send(await WorldCup());
-        } catch (error) {
-            console.error('Erreur lors du déclenchement du Cron :', error);
-        }
-    },
-        {
-            scheduled: true,
-            timezone: "America/Montreal"
-        })
+    // cron.schedule('0 8 * * *', async () => {
+    //     try {
+    //         const channel = await client.channels.fetch(idSalon);
+    //         await channel.send(await WorldCup()); World cup notification
+    //     } catch (error) {
+    //         console.error('Erreur lors du déclenchement du Cron :', error);
+    //     }
+    // },
+    //     {
+    //         scheduled: true,
+    //         timezone: "America/Montreal"
+    //     })
 });
 
 async function WorldCup() {
