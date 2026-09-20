@@ -394,7 +394,7 @@ client.on(Events.MessageCreate, async (message) => {
 
         } catch (error) {
             console.error("Erreur OpenRouter :", error);
-            await message.reply("Une erreur est survenue en contactant le modèle. ${error.message}");
+            await message.reply(`Une erreur est survenue en contactant le modèle. ${error.message}`);
         }
     }
 
