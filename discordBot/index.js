@@ -284,14 +284,14 @@ async function executerRechercheWeb(argument) {
  */
 async function genererReponseIA(historiqueMessages, tentative = 0) {
     const MAX_TENTATIVES = 3;
-    const modeleSelectionne = "poolside/laguna-m.1:free";
+    const modeleSelectionne = "deepseek/deepseek-v4.1-flash";
 
     if (tentative >= MAX_TENTATIVES) {
         console.warn(`[IA] Limite de ${MAX_TENTATIVES} tentatives atteinte.`);
         return "Désolé, je n'ai pas réussi à finaliser ma recherche après plusieurs essais.";
     }
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/deepseek/deepseek-v4.1-flash", {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
             "Authorization": `Bearer ${OpenRouteur}`,
