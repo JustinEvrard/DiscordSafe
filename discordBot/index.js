@@ -291,7 +291,7 @@ async function genererReponseIA(historiqueMessages, tentative = 0) {
         return "Désolé, je n'ai pas réussi à finaliser ma recherche après plusieurs essais.";
     }
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/deepseek/deepseek-v4.1-flash", {
         method: "POST",
         headers: {
             "Authorization": `Bearer ${OpenRouteur}`,
