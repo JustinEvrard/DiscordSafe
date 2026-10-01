@@ -1,5 +1,6 @@
 const { Events } = require('discord.js');
 const { systemInstructions, genererReponseIA } = require('../services/ai');
+const { getHistorique, ajouterHistorique } = require('../services/memory');
 
 module.exports = {
     name: Events.MessageCreate,
@@ -11,13 +12,14 @@ module.exports = {
             const promptUtilisateur = message.content.slice(3);
             let historiqueMessages = [
                 { role: "system", content: systemInstructions },
+                ...getHistorique(message.channel.id),
                 { role: "user", content: promptUtilisateur }
             ];
             await message.channel.sendTyping();
 
             try {
                 const reponseFinale = await genererReponseIA(historiqueMessages);
-
+                ajouterHistorique(message.channel.id, promptUtilisateur, reponseFinale);
                 // Sécurité pour la limite des 2000 caractères de Discord
                 if (reponseFinale.length > 2000) {
                     await message.reply(reponseFinale.slice(0, 1999));

@@ -35,6 +35,16 @@ Un agent conversationnel propulsé par un LLM via [OpenRouter](https://openroute
 
 Le bot enchaîne jusqu'à **3 appels d'outils** par question, puis renvoie une réponse finale en français (tronquée à la limite de 2000 caractères de Discord).
 
+#### Mémoire de conversation
+
+L'assistant se souvient des échanges précédents **dans chaque salon** :
+
+- les **10 derniers échanges** (question + réponse) sont conservés par salon ;
+- la mémoire d'un salon est **réinitialisée après 30 minutes** sans message à l'IA ;
+- seules les questions et les réponses finales sont mémorisées — les résultats de recherche ne le sont pas, pour limiter la consommation de tokens.
+
+La mémoire est stockée en RAM : elle est remise à zéro à chaque redémarrage du bot. Les limites se règlent dans [`src/services/memory.js`](discordBot/src/services/memory.js) (`MAX_ECHANGE`, `EXPIRATION_MEMOIRE`).
+
 ---
 
 ## Stack technique
@@ -68,6 +78,7 @@ DiscordSafe/
     │   ├── services/           # Logique métier et appels API
     │   │   ├── ai.js           # Boucle agent IA + prompt système
     │   │   ├── football.js     # API football-data.org
+    │   │   ├── memory.js       # Mémoire de conversation par salon
     │   │   └── webSearch.js    # API Tavily
     │   └── prompts/
     │       └── foot.md         # Documentation API injectée dans le prompt
