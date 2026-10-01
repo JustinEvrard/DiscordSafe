@@ -1,3 +1,8 @@
+/**
+ * Point d'entrée du bot : crée le client, charge les commandes et les événements, puis se connecte.
+ * @module index
+ */
+
 const { Client, Collection, Partials, GatewayIntentBits } = require('discord.js');
 const { token } = require('./config');
 const { loadCommands } = require('./handlers/loadCommands');

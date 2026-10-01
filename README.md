@@ -19,6 +19,7 @@ Bot Discord en Node.js avec un assistant IA capable de chercher sur le web et de
 - [Utilisation](#utilisation)
 - [Déploiement](#déploiement)
 - [Étendre le bot](#étendre-le-bot)
+- [Documentation technique](#documentation-technique)
 
 ---
 
@@ -64,6 +65,7 @@ La mémoire est stockée en RAM : elle est remise à zéro à chaque redémarrag
 DiscordSafe/
 ├── .github/workflows/
 │   └── deploy.yml              # Déploiement automatique sur le serveur
+├── docs/                       # Documentation technique
 └── discordBot/
     ├── src/
     │   ├── index.js            # Point d'entrée : client, chargement, connexion
@@ -85,6 +87,7 @@ DiscordSafe/
     ├── scripts/
     │   └── deploy-commands.js  # Enregistre les commandes slash auprès de Discord
     ├── config.example.json
+    ├── jsdoc.json              # Configuration de la doc HTML (npm run docs)
     └── package.json
 ```
 
@@ -125,6 +128,7 @@ Toute la configuration se trouve dans `discordBot/config.json`. Ce fichier est *
 |---|---|
 | `npm start` | Lance le bot |
 | `npm run deploy-commands` | Enregistre / met à jour les commandes slash sur Discord |
+| `npm run docs` | Génère la référence du code (JSDoc) dans `docs-api/` |
 
 > `deploy-commands` est à relancer uniquement lorsqu'une commande slash est ajoutée, supprimée ou que sa définition change.
 
@@ -186,3 +190,15 @@ module.exports = {
 ```
 
 Ajouter `once: true` pour un événement qui ne doit se déclencher qu'une seule fois. Il est branché automatiquement au démarrage.
+
+---
+
+## Documentation technique
+
+Le fonctionnement interne du bot est détaillé dans [`docs/`](docs/README.md) :
+
+- [Architecture](docs/architecture.md) — organisation du code et démarrage du bot
+- [Assistant IA](docs/assistant-ia.md) — prompt, boucle d'outils et mémoire
+- [Commandes et événements](docs/commandes-evenements.md) — format et chargement automatique
+- [Configuration](docs/configuration.md) — clés et réglages
+- [Déploiement](docs/deploiement.md) — CI/CD, PM2 et dépannage

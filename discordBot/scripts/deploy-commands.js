@@ -1,3 +1,9 @@
+/**
+ * Script à lancer avec `npm run deploy-commands` : enregistre les commandes slash auprès de Discord.
+ * À relancer après l'ajout, la suppression ou la modification d'une commande.
+ * @module scripts/deploy-commands
+ */
+
 const { REST, Routes } = require('discord.js');
 const { clientId, token } = require('../src/config');
 const { loadCommands } = require('../src/handlers/loadCommands');

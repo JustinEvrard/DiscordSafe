@@ -1,5 +1,15 @@
+/**
+ * Accès à l'API football-data.org (v4).
+ * @module services/football
+ */
+
 const { FootballKey } = require('../config');
 
+/**
+ * Construit le programme des matchs de Coupe du Monde du jour (heure de Montréal),
+ * avec la mention du rôle à notifier. Utilisé par la notification quotidienne (cron).
+ * @returns {Promise<string>} Le message prêt à être envoyé sur Discord, ou un message d'erreur
+ */
 async function WorldCup() {
     const jour = new Date().toISOString().split('T')[0];
     const jourB = new Date(jour);
@@ -57,6 +67,12 @@ async function WorldCup() {
     }
 }
 
+/**
+ * Outil `recherche_foot` de l'IA : appelle l'URL construite par l'IA et formate les matchs.
+ * L'URL n'est pas vérifiée, elle est appelée telle quelle.
+ * @param {string} url - URL complète de l'API football-data.org
+ * @returns {Promise<string>} La liste des matchs (heure de Paris), ou un message d'erreur
+ */
 async function WorldCupIA(url) {
     try {
         const response = await fetch(url, {

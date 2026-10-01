@@ -1,3 +1,8 @@
+/**
+ * Commande `/damien` : mentionne un membre plusieurs fois.
+ * @module commands/utility/damien
+ */
+
 const { SlashCommandBuilder }= require('discord.js');
 
 module.exports = {

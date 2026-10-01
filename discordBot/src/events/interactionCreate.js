@@ -1,7 +1,18 @@
+/**
+ * Événement `interactionCreate` : exécute les commandes slash.
+ * @module events/interactionCreate
+ */
+
 const { Events, MessageFlags } = require('discord.js');
 
 module.exports = {
     name: Events.InteractionCreate,
+    /**
+     * Retrouve la commande dans `client.commands` et l'exécute.
+     * En cas d'erreur, répond un message visible uniquement par l'utilisateur.
+     * @param {Interaction} interaction - L'interaction reçue de Discord
+     * @returns {Promise<void>}
+     */
     async execute(interaction) {
         if (!interaction.isChatInputCommand()) return;
         const command = interaction.client.commands.get(interaction.commandName);

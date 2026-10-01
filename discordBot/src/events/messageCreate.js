@@ -1,9 +1,20 @@
+/**
+ * Événement `messageCreate` : gère la commande `!ai`.
+ * @module events/messageCreate
+ */
+
 const { Events } = require('discord.js');
 const { systemInstructions, genererReponseIA } = require('../services/ai');
 const { getHistorique, ajouterHistorique } = require('../services/memory');
 
 module.exports = {
     name: Events.MessageCreate,
+    /**
+     * Si le message commence par `!ai `, envoie la question à l'IA avec l'historique du salon,
+     * mémorise l'échange puis répond (coupé à 2000 caractères). Les messages de bots sont ignorés.
+     * @param {Message} message - Le message Discord reçu
+     * @returns {Promise<void>}
+     */
     async execute(message) {
         if (message.author.bot) return;
 

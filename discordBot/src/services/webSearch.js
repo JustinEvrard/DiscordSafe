@@ -1,5 +1,15 @@
+/**
+ * Recherche web via l'API Tavily.
+ * @module services/webSearch
+ */
+
 const { Tavily } = require('../config');
 
+/**
+ * Outil `recherche_web` de l'IA : lance une recherche et renvoie les 3 premiers résultats.
+ * @param {string} argument - Mots-clés de la recherche, choisis par l'IA
+ * @returns {Promise<string>} Les résultats formatés (source, URL, contenu), ou un message d'erreur
+ */
 async function executerRechercheWeb(argument) {
     try {
         const response = await fetch("https://api.tavily.com/search", {

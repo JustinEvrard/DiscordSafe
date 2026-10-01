@@ -1,11 +1,26 @@
+/**
+ * Assistant IA : prompt système et boucle d'appels d'outils via OpenRouter.
+ *
+ * L'IA doit toujours répondre en JSON, soit un appel d'outil (`tool_call`),
+ * soit une réponse finale (`final_response`).
+ * @module services/ai
+ */
+
 const fs = require('node:fs');
 const path = require('node:path');
 const { OpenRouteur } = require('../config');
 const { executerRechercheWeb } = require('./webSearch');
 const { WorldCupIA } = require('./football');
 
+/** Documentation de l'API football (src/prompts/foot.md), injectée dans le prompt système. */
 const docfoot = fs.readFileSync(path.join(__dirname, '..', 'prompts', 'foot.md'), 'utf-8');
+/** Date du jour (AAAA-MM-JJ), calculée une seule fois au démarrage du bot. */
 const today = new Date().toISOString().split('T')[0];
+/**
+ * Prompt système envoyé en premier message à chaque appel.
+ * Décrit le format JSON imposé et les outils disponibles (`recherche_web`, `recherche_foot`).
+ * @type {string}
+ */
 const systemInstructions = `Tu es un agent IA autonome intégré sur un serveur Discord.
 Ajourd'hui nous sommes ${today}.
 
@@ -36,10 +51,15 @@ Voici les structures de JSON possibles que tu as le droit de générer :
 Sois concis et utilise l'outil 'recherche_web' dès que la demande de l'utilisateur requiert des données en temps réel, de la météo, des actualités ou des faits récents.`;
 
 /**
- * Gère la discussion avec l'IA et résout les appels d'outils (boucle de réflexion)
- * @param {Array} historiqueMessages - L'historique des messages pour le LLM
- * @param {number} tentative - Le compteur actuel de boucles
+ * Gère la discussion avec l'IA et résout les appels d'outils (boucle de réflexion).
+ *
+ * Quand l'IA demande un outil, son résultat est ajouté à `historiqueMessages`
+ * puis la fonction se rappelle elle-même, dans la limite de 3 tentatives.
+ * Si l'IA ne renvoie pas un JSON valide, son texte brut est renvoyé tel quel.
+ * @param {module:services/memory~MessageIA[]} historiqueMessages - L'historique des messages pour le LLM (modifié par la fonction)
+ * @param {number} [tentative=0] - Le compteur actuel de boucles
  * @returns {Promise<string>} - La réponse finale textuelle de l'IA
+ * @throws {Error} Si OpenRouter répond en erreur ou ne renvoie aucune réponse
  */
 async function genererReponseIA(historiqueMessages, tentative = 0) {
     const MAX_TENTATIVES = 3;

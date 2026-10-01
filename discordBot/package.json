@@ -8,10 +8,14 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "deploy-commands": "node scripts/deploy-commands.js"
+    "deploy-commands": "node scripts/deploy-commands.js",
+    "docs": "jsdoc -c jsdoc.json"
   },
   "dependencies": {
     "discord.js": "^14.26.4",
     "node-cron": "^4.2.1"
+  },
+  "devDependencies": {
+    "jsdoc": "^4.0.5"
   }
 }

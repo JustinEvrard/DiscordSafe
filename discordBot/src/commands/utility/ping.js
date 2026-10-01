@@ -1,3 +1,8 @@
+/**
+ * Commande `/ping` : vérifie que le bot répond.
+ * @module commands/utility/ping
+ */
+
 const { SlashCommandBuilder }= require('discord.js');
 
 module.exports = {
