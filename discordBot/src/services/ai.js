@@ -97,7 +97,8 @@ async function genererReponseIA(historiqueMessages, tentative = 0) {
             model: modeleSelectionne,
             messages: historiqueMessages,
             temperature: 0.2,
-            response_format: {type: "json_object"}
+            response_format: {type: "json_object"},
+            max_tokens: 1000
         })
     });
 
