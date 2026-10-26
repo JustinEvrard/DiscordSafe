@@ -29,7 +29,7 @@ module.exports = {
             await message.channel.sendTyping();
 
             try {
-                const reponseFinale = await genererReponseIA(historiqueMessages);
+                const reponseFinale = await genererReponseIA(historiqueMessages, message.client);
                 ajouterHistorique(message.channel.id, promptUtilisateur, reponseFinale);
                 // Sécurité pour la limite des 2000 caractères de Discord
                 if (reponseFinale.length > 2000) {

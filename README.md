@@ -33,6 +33,8 @@ Un agent conversationnel propulsé par un LLM via [OpenRouter](https://openroute
 |---|---|---|
 | `recherche_web` | Actualités, météo, faits récents | [Tavily](https://tavily.com) |
 | `recherche_foot` | Matchs, calendriers, compétitions | [football-data.org](https://www.football-data.org) |
+| `gartua_mort` | Lance le timer de réapparition de Gartua (Aion 2) | Timer interne du bot |
+| `gartua_prochain` | Indique quand Gartua réapparaît | Timer interne du bot |
 
 Le bot enchaîne jusqu'à **3 appels d'outils** par question, puis renvoie une réponse finale en français (tronquée à la limite de 2000 caractères de Discord).
 

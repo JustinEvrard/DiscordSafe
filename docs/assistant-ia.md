@@ -8,6 +8,7 @@ L'assistant est un agent conversationnel : avant de répondre, le modèle peut d
 | Prompt système, appel au modèle, boucle d'outils | `src/services/ai.js` |
 | Outil `recherche_web` | `src/services/webSearch.js` |
 | Outil `recherche_foot` | `src/services/football.js` |
+| Outils `gartua_mort` / `gartua_prochain` | `src/services/ai.js` → `src/services/bossTimer.js` |
 | Documentation API football donnée au modèle | `src/prompts/foot.md` |
 | Mémoire de conversation | `src/services/memory.js` |
 
@@ -60,13 +61,14 @@ Réponse finale :
 |---|---|
 | `tool_call` + `recherche_web` | Lance la recherche, ajoute le résultat à l'historique, rappelle le modèle |
 | `tool_call` + `recherche_foot` | Appelle l'URL fournie, ajoute le résultat, rappelle le modèle |
+| `tool_call` + `gartua_mort` / `gartua_prochain` | Lance ou consulte le timer Gartua, ajoute le résultat, rappelle le modèle |
 | `final_response` | Renvoie `text` |
 | JSON valide mais type inconnu | Renvoie un message d'erreur générique |
 | Pas du JSON | Renvoie le texte brut du modèle (mode de secours) |
 
 ## La boucle d'outils
 
-`genererReponseIA(historiqueMessages, tentative)` est **récursive** : après chaque appel d'outil, elle ajoute deux messages à l'historique puis se rappelle avec `tentative + 1`.
+`genererReponseIA(historiqueMessages, client, tentative)` est **récursive** (le `client` discord.js sert aux outils Gartua pour envoyer le ping) : après chaque appel d'outil, elle ajoute deux messages à l'historique puis se rappelle avec `tentative + 1`.
 
 ```
 assistant : {"type":"tool_call", ...}                 ← la demande du modèle
@@ -95,6 +97,15 @@ Le modèle **construit lui-même l'URL** de l'API. Pour cela, le contenu de `src
 `WorldCupIA(url)` appelle cette URL telle quelle avec la clé `FootballKey` et formate la liste des matchs (heure de Paris).
 
 Pour ajouter une compétition, il suffit d'ajouter son code dans `foot.md`, puis de redémarrer le bot (le fichier est lu au démarrage).
+
+### `gartua_mort` / `gartua_prochain` — timer de boss
+
+Raccourcis en langage naturel de la commande `/gartua` (ex. « !ai on a tué gartua il y a 10 min »).
+
+- `gartua_mort` : l'argument est le nombre de minutes écoulées depuis le kill (borné entre 0 et 720). `outilGartuaMort` appelle `gartuaDead` de `bossTimer.js`, qui programme le rappel 10 min avant et le ping de réapparition (12 h après le kill).
+- `gartua_prochain` : `outilGartuaProchain` lit l'heure prévue avec `getProchainSpawn`.
+
+Les résultats contiennent des horodatages Discord (`<t:...:R>`) que le modèle recopie dans sa réponse. Le timer est en mémoire : il est perdu au redémarrage du bot.
 
 ## Mémoire de conversation
 
