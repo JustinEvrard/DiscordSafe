@@ -11,7 +11,7 @@ const path = require('node:path');
 const { OpenRouteur } = require('../config');
 const { executerRechercheWeb } = require('./webSearch');
 const { WorldCupIA } = require('./football');
-const { gartuaDead, getProchainSpawn } = require('./bossTimer');
+const { gartuaDead, gartuaRespawnDans, getProchainSpawn } = require('./bossTimer');
 
 /** Documentation de l'API football (src/prompts/foot.md), injectée dans le prompt système. */
 const docfoot = fs.readFileSync(path.join(__dirname, '..', 'prompts', 'foot.md'), 'utf-8');
@@ -19,7 +19,7 @@ const docfoot = fs.readFileSync(path.join(__dirname, '..', 'prompts', 'foot.md')
 const today = new Date().toISOString().split('T')[0];
 /**
  * Prompt système envoyé en premier message à chaque appel.
- * Décrit le format JSON imposé et les outils disponibles (`recherche_web`, `recherche_foot`, `gartua_mort`, `gartua_prochain`).
+ * Décrit le format JSON imposé et les outils disponibles (`recherche_web`, `recherche_foot`, `gartua_mort`, `gartua_respawn_dans`, `gartua_prochain`).
  * @type {string}
  */
 const systemInstructions = `
@@ -46,17 +46,22 @@ ${docfoot}
 {"type": "tool_call", "tool": "gartua_mort", "argument": "0"}
 L'argument est le nombre de minutes écoulées depuis le kill, en chiffres ("0" si c'est maintenant, "10" pour "il y a 10 min").
 
-4. Savoir quand Gartua réapparaît :
+4. On te donne le temps restant avant la réapparition de Gartua :
+{"type": "tool_call", "tool": "gartua_respawn_dans", "argument": "424"}
+L'argument est le temps restant converti en minutes, en chiffres (ex. "7h04" ou "7h4min" → "424", "45 min" → "45").
+
+5. Savoir quand Gartua réapparaît :
 {"type": "tool_call", "tool": "gartua_prochain", "argument": ""}
 
-5. Réponse à l'utilisateur :
+6. Réponse à l'utilisateur :
 {"type": "final_response", "text": "ta réponse"}
 
 # QUAND UTILISER LES OUTILS
 - Utilise recherche_web dès que la réponse dépend d'une information que tu ne peux pas garantir : actualité, météo, prix, dates de sortie (jeux, films, séries), résultats sportifs, personnes, événements après ta date de connaissances.
 - Utilise recherche_foot pour les matchs et compétitions de football listés dans la documentation.
 - Utilise gartua_mort uniquement quand quelqu'un affirme que Gartua vient d'être tué (pas pour une question ou une hypothèse). Le bot programmera lui-même le ping de réapparition.
-- Utilise gartua_prochain quand on te demande quand Gartua réapparaît.
+- Utilise gartua_respawn_dans quand quelqu'un indique dans combien de temps Gartua réapparaît (ex. "il reste 7h04", "respawn dans 2h"), y compris s'il te demande de régler le timer ou le ping.
+- Utilise gartua_prochain quand on te demande quand Gartua réapparaît, sans donner d'heure.
 - Les résultats des outils Gartua contiennent des heures au format <t:...>. Recopie-les telles quelles dans ta réponse : Discord les affiche dans le fuseau de chacun.
 - N'appelle qu'un outil à la fois. Tu as au maximum 3 appels d'outils par question : choisis des mots-clés précis dès le premier essai.
 - Ne demande jamais la permission de chercher : si une recherche est utile, fais-la directement.
@@ -119,7 +124,13 @@ async function genererReponseIA(historiqueMessages, client, tentative = 0) {
     const data = await response.json();
     if (!data.choices || data.choices.length === 0) throw new Error("Aucune réponse reçue de l'IA.");
 
-    const contenuBrut = data.choices[0].message.content.trim();
+    // content peut être null (réponse vide, ou budget max_tokens consommé avant la réponse)
+    const choix = data.choices[0];
+    const contenuBrut = (choix.message?.content ?? "").trim();
+    if (!contenuBrut) {
+        console.error(`[IA] Réponse vide du modèle (finish_reason : ${choix.finish_reason}).`);
+        throw new Error("Le modèle a renvoyé une réponse vide, réessaie.");
+    }
 
     try {
         // On parse TOUJOURS la réponse puisque l'IA doit répondre en JSON
@@ -159,12 +170,17 @@ async function genererReponseIA(historiqueMessages, client, tentative = 0) {
 
             // On relance la fonction (récursion)
             return await genererReponseIA(historiqueMessages, client, tentative + 1);
-        } else if (objetIA.type === "tool_call" && (objetIA.tool === "gartua_mort" || objetIA.tool === "gartua_prochain")) {
+        } else if (objetIA.type === "tool_call" && ["gartua_mort", "gartua_respawn_dans", "gartua_prochain"].includes(objetIA.tool)) {
             console.log(`[IA] Outil ${objetIA.tool} demandé (Étape ${tentative + 1}) : ${objetIA.argument}`);
 
-            const resultatGartua = objetIA.tool === "gartua_mort"
-                ? outilGartuaMort(client, objetIA.argument)
-                : outilGartuaProchain();
+            let resultatGartua;
+            if (objetIA.tool === "gartua_mort") {
+                resultatGartua = outilGartuaMort(client, objetIA.argument);
+            } else if (objetIA.tool === "gartua_respawn_dans") {
+                resultatGartua = outilGartuaRespawnDans(client, objetIA.argument);
+            } else {
+                resultatGartua = outilGartuaProchain();
+            }
 
             // On garde le JSON de l'IA dans l'historique
             historiqueMessages.push({ role: "assistant", content: contenuBrut });
@@ -207,6 +223,20 @@ function outilGartuaMort(client, argument) {
     const heure = gartuaDead(client, Date.now() - minutes * 60 * 1000);
     const secondes = Math.floor(heure / 1000);
     return `Timer lancé (kill il y a ${minutes} min). Gartua réapparaît <t:${secondes}:R> (<t:${secondes}:t>). Un ping sera envoyé automatiquement.`;
+}
+
+/**
+ * Outil `gartua_respawn_dans` : lance le timer à partir du temps restant avant la réapparition.
+ * @param {Client} client - Le client discord.js
+ * @param {string} argument - Minutes restantes avant la réapparition, choisies par l'IA
+ * @returns {string} Le résultat à transmettre à l'IA
+ */
+function outilGartuaRespawnDans(client, argument) {
+    // Entre 0 et 720 min (12 h de respawn)
+    const minutes = Math.min(Math.max(parseInt(argument, 10) || 0, 0), 720);
+    const heure = gartuaRespawnDans(client, minutes);
+    const secondes = Math.floor(heure / 1000);
+    return `Timer lancé (réapparition dans ${minutes} min). Gartua réapparaît <t:${secondes}:R> (<t:${secondes}:t>). Un ping sera envoyé automatiquement.`;
 }
 
 /**

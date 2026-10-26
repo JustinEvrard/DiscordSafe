@@ -103,6 +103,7 @@ Pour ajouter une compétition, il suffit d'ajouter son code dans `foot.md`, puis
 Raccourcis en langage naturel de la commande `/gartua` (ex. « !ai on a tué gartua il y a 10 min »).
 
 - `gartua_mort` : l'argument est le nombre de minutes écoulées depuis le kill (borné entre 0 et 720). `outilGartuaMort` appelle `gartuaDead` de `bossTimer.js`, qui programme le rappel 10 min avant et le ping de réapparition (12 h après le kill).
+- `gartua_respawn_dans` : l'argument est le temps restant avant la réapparition, en minutes (ex. « il reste 7h04 » → 424). `outilGartuaRespawnDans` appelle `gartuaRespawnDans`.
 - `gartua_prochain` : `outilGartuaProchain` lit l'heure prévue avec `getProchainSpawn`.
 
 Les résultats contiennent des horodatages Discord (`<t:...:R>`) que le modèle recopie dans sa réponse. Le timer est en mémoire : il est perdu au redémarrage du bot.

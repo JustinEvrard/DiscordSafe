@@ -58,10 +58,20 @@ function gartuaDead(client, heureKill = Date.now()) {
 }
 
 /**
+ * Lance (ou relance) le timer de Gartua à partir du temps restant avant sa réapparition.
+ * @param {Client} client - Le client discord.js
+ * @param {number} minutesRestantes - Minutes avant la réapparition
+ * @returns {number} Heure de réapparition en millisecondes
+ */
+function gartuaRespawnDans(client, minutesRestantes) {
+    return gartuaDead(client, Date.now() + minutesRestantes * 60 * 1000 - RESPAWN);
+}
+
+/**
  * @returns {number|null} Heure de réapparition prévue, ou null s'il n'y a pas de timer en cours
  */
 function getProchainSpawn() {
     return prochainSpawn;
 }
 
-module.exports = { gartuaDead, getProchainSpawn };
+module.exports = { gartuaDead, gartuaRespawnDans, getProchainSpawn };
