@@ -3,7 +3,7 @@
  * @module services/bossTimer
  */
 
-const RESPAWN = 12 * 60 * 60 * 1000;   // 12 h
+const RESPAWN = 11 * 60 * 60 * 1000;   // 12 h
 const RAPPEL = 10 * 60 * 1000;         // rappel 10 min avant
 
 const ID_SALON = "1553768927438311544";
