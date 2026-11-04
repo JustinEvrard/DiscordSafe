@@ -11,7 +11,7 @@ const path = require('node:path');
 const { OpenRouteur } = require('../config');
 const { executerRechercheWeb } = require('./webSearch');
 const { WorldCupIA } = require('./football');
-const { gartuaDead, gartuaRespawnDans, getProchainSpawn } = require('./bossTimer');
+const { gartuaDead, gartuaRespawnDans, getProchainSpawn, RESPAWN_MINUTES } = require('./bossTimer');
 
 /** Documentation de l'API football (src/prompts/foot.md), injectée dans le prompt système. */
 const docfoot = fs.readFileSync(path.join(__dirname, '..', 'prompts', 'foot.md'), 'utf-8');
@@ -218,8 +218,8 @@ async function genererReponseIA(historiqueMessages, client, tentative = 0) {
  * @returns {string} Le résultat à transmettre à l'IA
  */
 function outilGartuaMort(client, argument) {
-    // Même bornes que l'option il_y_a de /gartua (0 à 720 min)
-    const minutes = Math.min(Math.max(parseInt(argument, 10) || 0, 0), 720);
+    // Même bornes que l'option il_y_a de /gartua (0 à RESPAWN_MINUTES)
+    const minutes = Math.min(Math.max(parseInt(argument, 10) || 0, 0), RESPAWN_MINUTES);
     const heure = gartuaDead(client, Date.now() - minutes * 60 * 1000);
     const secondes = Math.floor(heure / 1000);
     return `Timer lancé (kill il y a ${minutes} min). Gartua réapparaît <t:${secondes}:R> (<t:${secondes}:t>). Un ping sera envoyé automatiquement.`;
@@ -232,8 +232,8 @@ function outilGartuaMort(client, argument) {
  * @returns {string} Le résultat à transmettre à l'IA
  */
 function outilGartuaRespawnDans(client, argument) {
-    // Entre 0 et 720 min (12 h de respawn)
-    const minutes = Math.min(Math.max(parseInt(argument, 10) || 0, 0), 720);
+    // Entre 0 et RESPAWN_MINUTES (durée du respawn)
+    const minutes = Math.min(Math.max(parseInt(argument, 10) || 0, 0), RESPAWN_MINUTES);
     const heure = gartuaRespawnDans(client, minutes);
     const secondes = Math.floor(heure / 1000);
     return `Timer lancé (réapparition dans ${minutes} min). Gartua réapparaît <t:${secondes}:R> (<t:${secondes}:t>). Un ping sera envoyé automatiquement.`;

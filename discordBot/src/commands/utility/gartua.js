@@ -4,7 +4,7 @@
  */
 
 const { SlashCommandBuilder } = require('discord.js');
-const { gartuaDead } = require('../../services/bossTimer');
+const { gartuaDead, RESPAWN_MINUTES } = require('../../services/bossTimer');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -14,7 +14,7 @@ module.exports = {
             option.setName('il_y_a')
                 .setDescription('Tué il y a combien de minutes ? (vide = maintenant)')
                 .setMinValue(0)
-                .setMaxValue(720)
+                .setMaxValue(RESPAWN_MINUTES)
         ),
     async execute(interaction) {
         const minutes = interaction.options.getInteger('il_y_a') ?? 0;

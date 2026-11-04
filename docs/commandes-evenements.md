@@ -39,7 +39,7 @@ Le résultat est utilisé à deux endroits :
 
 ### Enregistrement auprès de Discord
 
-Discord doit connaître une commande pour l'afficher aux utilisateurs. Après avoir **ajouté, supprimé ou modifié la définition** (`data`) d'une commande :
+Discord doit connaître une commande pour l'afficher aux utilisateurs. Le déploiement automatique (voir [Déploiement](deploiement.md)) lance le script à chaque push sur `main`. En local, après avoir **ajouté, supprimé ou modifié la définition** (`data`) d'une commande :
 
 ```bash
 npm run deploy-commands

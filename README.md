@@ -133,7 +133,7 @@ Toute la configuration se trouve dans `discordBot/config.json`. Ce fichier est *
 | `npm run deploy-commands` | Enregistre / met à jour les commandes slash sur Discord |
 | `npm run docs` | Génère la référence du code (JSDoc) dans `docs-api/` |
 
-> `deploy-commands` est à relancer uniquement lorsqu'une commande slash est ajoutée, supprimée ou que sa définition change.
+> En production, `deploy-commands` est lancé automatiquement à chaque déploiement. En local, il est à relancer lorsqu'une commande slash est ajoutée, supprimée ou que sa définition change.
 
 ---
 
@@ -175,7 +175,7 @@ module.exports = {
 };
 ```
 
-Puis exécuter `npm run deploy-commands`. Aucune modification de `index.js` n'est nécessaire.
+Elle est enregistrée auprès de Discord au prochain déploiement (ou en local avec `npm run deploy-commands`). Aucune modification de `index.js` n'est nécessaire.
 
 ### Ajouter un événement
 

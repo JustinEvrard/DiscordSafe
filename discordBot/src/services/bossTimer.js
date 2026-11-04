@@ -3,7 +3,9 @@
  * @module services/bossTimer
  */
 
-const RESPAWN = 11 * 60 * 60 * 1000;   // 12 h
+/** Délai de réapparition de Gartua, en minutes (11 h). */
+const RESPAWN_MINUTES = 11 * 60;
+const RESPAWN = RESPAWN_MINUTES * 60 * 1000;
 const RAPPEL = 10 * 60 * 1000;         // rappel 10 min avant
 
 const ID_SALON = "1553768927438311544";
@@ -74,4 +76,4 @@ function getProchainSpawn() {
     return prochainSpawn;
 }
 
-module.exports = { gartuaDead, gartuaRespawnDans, getProchainSpawn };
+module.exports = { gartuaDead, gartuaRespawnDans, getProchainSpawn, RESPAWN_MINUTES };

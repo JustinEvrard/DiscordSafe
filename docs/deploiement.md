@@ -10,7 +10,8 @@ flowchart LR
     GA -->|SSH| S[Serveur Oracle]
     S --> F[git fetch + reset --hard origin/main]
     F --> N[npm install --omit=dev]
-    N --> R[pm2 delete + pm2 start src/index.js]
+    N --> C[npm run deploy-commands]
+    C --> R[pm2 delete + pm2 start src/index.js]
     R --> SV[pm2 save]
 ```
 
@@ -20,9 +21,10 @@ Le workflow [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) se
 |---|---|---|
 | 1 | `git fetch --all && git reset --hard origin/main` | Aligne le serveur sur `main` (toute modification locale est écrasée) |
 | 2 | `npm install --omit=dev` | Installe les dépendances de production (sans `jsdoc`) |
-| 3 | `pm2 delete mon-bot \|\| true` | Supprime l'ancien processus s'il existe |
-| 4 | `pm2 start src/index.js --name mon-bot` | Lance le bot |
-| 5 | `pm2 save` | Enregistre la liste des processus pour un redémarrage du serveur |
+| 3 | `npm run deploy-commands` | Enregistre les commandes slash auprès de Discord (avec le `config.json` du serveur) |
+| 4 | `pm2 delete mon-bot \|\| true` | Supprime l'ancien processus s'il existe |
+| 5 | `pm2 start src/index.js --name mon-bot` | Lance le bot |
+| 6 | `pm2 save` | Enregistre la liste des processus pour un redémarrage du serveur |
 
 Le processus est supprimé puis recréé (plutôt que `pm2 restart`) pour que PM2 prenne toujours le bon fichier d'entrée.
 
@@ -45,7 +47,7 @@ Le processus est supprimé puis recréé (plutôt que `pm2 restart`) pour que PM
 
 ## Ce qui n'est pas automatique
 
-- **Les commandes slash** : après une modification de commande, lancer `npm run deploy-commands` (en local ou sur le serveur).
+- **Les commandes slash en cas d'échec** : elles sont enregistrées à chaque push, mais si `deploy-commands` échoue, le bot redémarre quand même. Vérifier le log de l'Action, ou relancer `npm run deploy-commands` sur le serveur.
 - **`config.json`** : une nouvelle clé doit être ajoutée à la main sur le serveur.
 
 ## Commandes PM2 utiles
@@ -66,5 +68,5 @@ pm2 stop mon-bot
 | `Cannot find module '../config.json'` | `config.json` absent de `~/DiscordSafe/discordBot/` |
 | Le bot est en ligne mais `!ai` ne répond pas | Intent **Message Content** désactivé dans le Developer Portal |
 | `!ai` répond « Erreur OpenRouter: 401 » | Clé `OpenRouteur` invalide ; « 402 » : crédit épuisé |
-| Une commande slash n'apparaît pas | `npm run deploy-commands` non lancé, ou propagation en cours |
+| Une commande slash n'apparaît pas | Étape `deploy-commands` en erreur dans le log de l'Action, ou client Discord à recharger (`Ctrl + R`) |
 | Le bot ne revient pas après un redémarrage du serveur | `pm2 startup` puis `pm2 save` non effectués |
